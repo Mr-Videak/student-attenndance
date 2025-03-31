@@ -367,14 +367,9 @@ const TakeAttendance = () => {
             filteredStudents.map(student => (
               <AttendanceMarker
                 key={student.id}
-                student={{
-                  id: student.id,
-                  rollNumber: student.roll_number,
-                  name: student.name,
-                  section: student.section,
-                  batch: student.batch,
-                  avatar: student.avatar
-                }}
+                rollNumber={student.roll_number}
+                name={student.name}
+                avatar={student.avatar}
                 isPresent={presentStudents.includes(student.roll_number)}
                 onChange={handleAttendanceChange}
               />
