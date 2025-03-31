@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, ClipboardList, Home, Menu } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Calendar, ClipboardList, Home, Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -12,14 +12,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const Navbar = () => {
   const isMobile = useIsMobile();
+  const { user, signOut } = useAuth();
+  const location = useLocation();
 
   const menuItems = [
     { title: 'Dashboard', icon: <Home className="h-5 w-5 mr-2" />, href: '/' },
     { title: 'Classes', icon: <ClipboardList className="h-5 w-5 mr-2" />, href: '/classes' },
-    { title: 'Attendance', icon: <Calendar className="h-5 w-5 mr-2" />, href: '/attendance' },
+    { title: 'Attendance', icon: <Calendar className="h-5 w-5 mr-2" />, href: '/attendance-records' },
   ];
 
   return (
@@ -51,28 +54,58 @@ const Navbar = () => {
                   <Link
                     key={item.title}
                     to={item.href}
-                    className="flex items-center py-2 px-3 rounded-md hover:bg-muted"
+                    className={`flex items-center py-2 px-3 rounded-md hover:bg-muted ${
+                      location.pathname === item.href ? 'bg-muted' : ''
+                    }`}
                   >
                     {item.icon}
                     {item.title}
                   </Link>
                 ))}
+                
+                {user && (
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center justify-start mt-4"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    Sign Out
+                  </Button>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
         ) : (
-          <nav className="flex items-center space-x-2">
-            {menuItems.map((item) => (
-              <Link key={item.title} to={item.href}>
-                <Button variant="ghost" className="text-sm">
-                  <span className="flex items-center">
-                    {item.icon}
-                    {item.title}
-                  </span>
-                </Button>
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center">
+            <nav className="flex items-center space-x-2 mr-4">
+              {menuItems.map((item) => (
+                <Link key={item.title} to={item.href}>
+                  <Button 
+                    variant={location.pathname === item.href ? "default" : "ghost"} 
+                    className="text-sm"
+                  >
+                    <span className="flex items-center">
+                      {item.icon}
+                      {item.title}
+                    </span>
+                  </Button>
+                </Link>
+              ))}
+            </nav>
+            
+            {user && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => signOut()}
+                className="flex items-center"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Sign Out
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </header>

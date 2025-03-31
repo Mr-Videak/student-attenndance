@@ -10,6 +10,7 @@ import ClassDetails from "./pages/ClassDetails";
 import StudentDetails from "./pages/StudentDetails";
 import TakeAttendance from "./pages/TakeAttendance";
 import CreateClass from "./pages/CreateClass";
+import AttendanceRecords from "./pages/AttendanceRecords";
 import NotFound from "./pages/NotFound";
 import AuthPage from "./components/auth/AuthPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
@@ -52,6 +53,12 @@ const App = () => (
             <Route path="/attendance/:classId" element={
               <ProtectedRoute>
                 <TakeAttendance />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/attendance-records" element={
+              <ProtectedRoute>
+                <AttendanceRecords />
               </ProtectedRoute>
             } />
             

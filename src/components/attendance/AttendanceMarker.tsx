@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, Check, Save, X } from 'lucide-react';
@@ -26,8 +27,11 @@ interface AttendanceMarkerProps {
 }
 
 const AttendanceMarker = ({ classData }: AttendanceMarkerProps) => {
-  const [date, setDate] = useState<Date>(new Date());
-  const [formattedDate, setFormattedDate] = useState<string>(getCurrentDate());
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  
+  const [date, setDate] = useState<Date>(dateParam ? new Date(dateParam) : new Date());
+  const [formattedDate, setFormattedDate] = useState<string>(dateParam || getCurrentDate());
   const [presentStudents, setPresentStudents] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
