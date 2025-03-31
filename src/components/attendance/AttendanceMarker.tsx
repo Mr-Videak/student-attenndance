@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { toast } from '@/components/ui/sonner';
+import { toast } from "sonner";
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarIcon, Check, Save, X } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
