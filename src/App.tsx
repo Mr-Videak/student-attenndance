@@ -15,6 +15,10 @@ import NotFound from "./pages/NotFound";
 import AuthPage from "./components/auth/AuthPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import { ThemeProvider } from "./hooks/use-theme";
+import Classes from "./pages/Classes";
+import EditClass from "./pages/EditClass";
+import ViewAttendance from "./pages/ViewAttendance";
 
 // Initialize app data
 import { initializeAppData } from "./utils/data";
@@ -24,55 +28,75 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/class/:classId" element={
-              <ProtectedRoute>
-                <ClassDetails />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/student/:rollNumber" element={
-              <ProtectedRoute>
-                <StudentDetails />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/attendance/:classId" element={
-              <ProtectedRoute>
-                <TakeAttendance />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/attendance-records" element={
-              <ProtectedRoute>
-                <AttendanceRecords />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="/create-class" element={
-              <ProtectedRoute>
-                <CreateClass />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="dark">
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/classes" element={
+                <ProtectedRoute>
+                  <Classes />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/class/:classId" element={
+                <ProtectedRoute>
+                  <ClassDetails />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/edit-class/:classId" element={
+                <ProtectedRoute>
+                  <EditClass />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/student/:rollNumber" element={
+                <ProtectedRoute>
+                  <StudentDetails />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/attendance/:classId" element={
+                <ProtectedRoute>
+                  <TakeAttendance />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/view-attendance/:recordId" element={
+                <ProtectedRoute>
+                  <ViewAttendance />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/attendance-records" element={
+                <ProtectedRoute>
+                  <AttendanceRecords />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/create-class" element={
+                <ProtectedRoute>
+                  <CreateClass />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Calendar, ClipboardList, Home, Menu, LogOut } from 'lucide-react';
+import { Calendar, ClipboardList, Home, Menu, LogOut, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,17 +13,23 @@ import {
 } from "@/components/ui/sheet";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useTheme } from '@/hooks/use-theme';
 
 const Navbar = () => {
   const isMobile = useIsMobile();
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const { theme, setTheme } = useTheme();
 
   const menuItems = [
     { title: 'Dashboard', icon: <Home className="h-5 w-5 mr-2" />, href: '/' },
     { title: 'Classes', icon: <ClipboardList className="h-5 w-5 mr-2" />, href: '/classes' },
     { title: 'Attendance', icon: <Calendar className="h-5 w-5 mr-2" />, href: '/attendance-records' },
   ];
+
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b">
@@ -63,6 +69,18 @@ const Navbar = () => {
                   </Link>
                 ))}
                 
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center py-2 px-3 rounded-md hover:bg-muted text-left"
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="h-5 w-5 mr-2" />
+                  ) : (
+                    <Moon className="h-5 w-5 mr-2" />
+                  )}
+                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                
                 {user && (
                   <Button 
                     variant="ghost" 
@@ -93,6 +111,19 @@ const Navbar = () => {
                 </Link>
               ))}
             </nav>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="mr-2"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
             
             {user && (
               <Button 

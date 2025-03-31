@@ -9,7 +9,109 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      attendance_records: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          date: string
+          id: string
+          present_students: string[] | null
+          user_id: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          present_students?: string[] | null
+          user_id?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          present_students?: string[] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          batch: string
+          created_at: string
+          id: string
+          name: string
+          section: string
+          user_id: string | null
+        }
+        Insert: {
+          batch: string
+          created_at?: string
+          id?: string
+          name: string
+          section: string
+          user_id?: string | null
+        }
+        Update: {
+          batch?: string
+          created_at?: string
+          id?: string
+          name?: string
+          section?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          avatar: string | null
+          batch: string
+          class_id: string | null
+          created_at: string
+          id: string
+          name: string
+          roll_number: string
+          section: string
+        }
+        Insert: {
+          avatar?: string | null
+          batch: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          roll_number: string
+          section: string
+        }
+        Update: {
+          avatar?: string | null
+          batch?: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          roll_number?: string
+          section?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

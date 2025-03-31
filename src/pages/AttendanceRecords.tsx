@@ -1,268 +1,286 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Calendar as CalendarIcon, ChevronLeft, CopyIcon, Share } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import {
-  Class,
-  AttendanceRecord,
-  loadClasses,
-  loadAttendanceRecords,
-  getClassAttendanceRecords,
-  formatAttendanceReport,
-} from '@/utils';
+import { 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight,
+  Eye,
+  Download,
+  Share
+} from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from '@/hooks/use-toast';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { format, parseISO, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
+import EmptyState from '@/components/ui/EmptyState';
 
 const AttendanceRecords = () => {
-  const navigate = useNavigate();
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string | null>(null);
-  const [date, setDate] = useState<Date>(new Date());
-  const [formattedDate, setFormattedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const { toast } = useToast();
+  
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [classesMap, setClassesMap] = useState({});
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    const loadedClasses = loadClasses();
-    setClasses(loadedClasses);
-    
-    if (loadedClasses.length > 0 && !selectedClass) {
-      setSelectedClass(loadedClasses[0].id);
-    }
-  }, []);
+    fetchClasses();
+    fetchAttendanceRecords();
+  }, [currentMonth]);
   
-  useEffect(() => {
-    if (selectedClass) {
-      const records = getClassAttendanceRecords(selectedClass);
-      setAttendanceRecords(records);
-    }
-  }, [selectedClass]);
-  
-  useEffect(() => {
-    setFormattedDate(format(date, 'yyyy-MM-dd'));
-  }, [date]);
-  
-  const handleCopyAttendance = (classObj: Class | undefined) => {
-    if (!classObj) return;
-    
-    const report = formatAttendanceReport(classObj, formattedDate);
-    navigator.clipboard.writeText(report);
-    toast.success('Attendance report copied to clipboard');
-  };
-  
-  const handleShareAttendance = async (classObj: Class | undefined) => {
-    if (!classObj) return;
-    
-    const report = formatAttendanceReport(classObj, formattedDate);
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Attendance Report for ${classObj.name}`,
-          text: report,
-        });
-        toast.success('Attendance report shared');
-      } catch (error) {
-        console.error('Error sharing:', error);
-        // Fallback to copy if sharing fails
-        navigator.clipboard.writeText(report);
-        toast.success('Attendance report copied to clipboard');
-      }
-    } else {
-      // Fallback for browsers that don't support sharing
-      navigator.clipboard.writeText(report);
-      toast.success('Attendance report copied to clipboard');
+  const fetchClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name, section, batch');
+      
+      if (error) throw error;
+      
+      // Convert to map for easier lookup
+      const classes = {};
+      data.forEach(cls => {
+        classes[cls.id] = cls;
+      });
+      
+      setClassesMap(classes);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
     }
   };
   
-  const filteredRecords = attendanceRecords.filter(record => 
-    selectedClass && record.classId === selectedClass
-  ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const fetchAttendanceRecords = async () => {
+    try {
+      setLoading(true);
+      
+      const startDate = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
+      const endDate = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
+      
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      setAttendanceRecords(data || []);
+    } catch (error) {
+      console.error('Error fetching attendance records:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to load attendance records.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   
-  const selectedClassData = classes.find(c => c.id === selectedClass);
+  const navigateToPreviousMonth = () => {
+    setCurrentMonth(prev => subMonths(prev, 1));
+  };
+  
+  const navigateToNextMonth = () => {
+    setCurrentMonth(prev => addMonths(prev, 1));
+  };
+  
+  const getClassName = (classId) => {
+    return classesMap[classId]?.name || 'Unknown Class';
+  };
+  
+  const getClassDetails = (classId) => {
+    const cls = classesMap[classId];
+    if (!cls) return 'Unknown';
+    return `${cls.name} | Section ${cls.section} | Batch ${cls.batch}`;
+  };
+  
+  const shareAttendanceOnWhatsApp = async (recordId) => {
+    try {
+      // Fetch detailed attendance information
+      const { data: recordData, error: recordError } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('id', recordId)
+        .single();
+      
+      if (recordError) throw recordError;
+      
+      const classId = recordData.class_id;
+      
+      // Fetch class data
+      const { data: classData, error: classError } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('id', classId)
+        .single();
+      
+      if (classError) throw classError;
+      
+      // Fetch students
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
+        .select('*')
+        .eq('class_id', classId);
+      
+      if (studentsError) throw studentsError;
+      
+      const date = new Date(recordData.date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      let message = `*Attendance Report*\n\n`;
+      message += `📆 *Date:* ${date}\n`;
+      message += `📚 *Class:* ${classData.name}\n`;
+      message += `👥 *Section:* ${classData.section}\n`;
+      message += `🎓 *Batch:* ${classData.batch}\n\n`;
+      
+      const presentStudents = studentsData.filter(student => 
+        recordData.present_students.includes(student.roll_number)
+      );
+      
+      const absentStudents = studentsData.filter(student => 
+        !recordData.present_students.includes(student.roll_number)
+      );
+      
+      message += `✅ *Present (${presentStudents.length}/${studentsData.length})*\n`;
+      presentStudents.forEach((student, index) => {
+        message += `${index + 1}. ${student.roll_number} - ${student.name}\n`;
+      });
+      
+      message += `\n❌ *Absent (${absentStudents.length}/${studentsData.length})*\n`;
+      absentStudents.forEach((student, index) => {
+        message += `${index + 1}. ${student.roll_number} - ${student.name}\n`;
+      });
+      
+      message += `\n📊 *Attendance Percentage:* ${Math.round((presentStudents.length / studentsData.length) * 100)}%\n`;
+      message += `\nGenerated by HighClass Attendance App`;
+      
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    } catch (error) {
+      console.error('Error sharing attendance:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to share attendance report.",
+      });
+    }
+  };
   
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 container max-w-6xl px-4 py-8">
-        <div className="flex items-center mb-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(-1)}
-            className="mr-4"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">Attendance Records</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Attendance Records</h1>
+            <p className="text-muted-foreground mt-1">
+              View and manage attendance records
+            </p>
+          </div>
         </div>
         
-        {classes.length > 0 ? (
-          <>
-            <Tabs defaultValue={selectedClass || ''} onValueChange={setSelectedClass} className="mb-6">
-              <TabsList className="mb-4 overflow-auto flex whitespace-nowrap">
-                {classes.map(classItem => (
-                  <TabsTrigger key={classItem.id} value={classItem.id}>
-                    {classItem.name} ({classItem.section})
-                  </TabsTrigger>
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <CardTitle>Monthly Records</CardTitle>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="icon" onClick={navigateToPreviousMonth}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="w-36 text-center">
+                  {format(currentMonth, 'MMMM yyyy')}
+                </div>
+                <Button variant="outline" size="icon" onClick={navigateToNextMonth}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <CardDescription>
+              Showing attendance records for {format(currentMonth, 'MMMM yyyy')}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-10 bg-muted rounded animate-pulse"></div>
                 ))}
-              </TabsList>
-              
-              {classes.map(classItem => (
-                <TabsContent key={classItem.id} value={classItem.id}>
-                  <div className="bg-card rounded-lg border shadow-sm p-4 mb-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                      <div>
-                        <h2 className="text-xl font-semibold">{classItem.name}</h2>
-                        <p className="text-muted-foreground">
-                          Section {classItem.section} | Batch {classItem.batch} | {classItem.students.length} Students
-                        </p>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-full md:w-auto justify-start text-left font-normal"
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {format(date, "PPP")}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={date}
-                              onSelect={(date) => date && setDate(date)}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        
-                        <Button 
-                          variant="outline" 
-                          onClick={() => handleCopyAttendance(classItem)}
-                          className="flex items-center"
-                        >
-                          <CopyIcon className="mr-1 h-4 w-4" />
-                          Copy
-                        </Button>
-                        
-                        <Button 
-                          onClick={() => handleShareAttendance(classItem)}
-                          className="flex items-center"
-                        >
-                          <Share className="mr-1 h-4 w-4" />
-                          Share
-                        </Button>
-                      </div>
-                    </div>
+              </div>
+            ) : attendanceRecords.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Attendance</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendanceRecords.map((record) => {
+                    const date = new Date(record.date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                    });
                     
-                    {filteredRecords.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Present</TableHead>
-                            <TableHead>Absent</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredRecords.map(record => {
-                            const totalStudents = classItem.students.length;
-                            const presentCount = record.presentStudents.length;
-                            const absentCount = totalStudents - presentCount;
-                            
-                            return (
-                              <TableRow key={record.id}>
-                                <TableCell className="font-medium">
-                                  {format(new Date(record.date), 'PP')}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="success" className="mr-1">{presentCount}</Badge>
-                                  <span className="text-muted-foreground">
-                                    ({Math.round((presentCount / totalStudents) * 100)}%)
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="destructive" className="mr-1">{absentCount}</Badge>
-                                  <span className="text-muted-foreground">
-                                    ({Math.round((absentCount / totalStudents) * 100)}%)
-                                  </span>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex space-x-2">
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => navigate(`/attendance/${classItem.id}?date=${record.date}`)}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm"
-                                      onClick={() => {
-                                        const formattedRecord = formatAttendanceReport(classItem, record.date);
-                                        navigator.clipboard.writeText(formattedRecord);
-                                        toast.success('Attendance report copied to clipboard');
-                                      }}
-                                    >
-                                      <CopyIcon className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <div className="text-center py-8 bg-muted/40 rounded-lg">
-                        <p className="text-muted-foreground mb-4">No attendance records found for this class</p>
-                        <Button onClick={() => navigate(`/attendance/${classItem.id}`)}>
-                          Take Attendance
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-          </>
-        ) : (
-          <div className="text-center py-12">
-            <h2 className="text-xl font-semibold mb-4">No classes found</h2>
-            <p className="text-muted-foreground mb-6">
-              You need to create classes before you can take or view attendance
-            </p>
-            <Button onClick={() => navigate('/create-class')}>
-              Create Class
-            </Button>
-          </div>
-        )}
+                    return (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{date}</TableCell>
+                        <TableCell>{getClassName(record.class_id)}</TableCell>
+                        <TableCell>{record.present_students.length} present</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Link to={`/view-attendance/${record.id}`}>
+                              <Button variant="ghost" size="icon">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => shareAttendanceOnWhatsApp(record.id)}
+                            >
+                              <Share className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            ) : (
+              <EmptyState
+                title="No Records Found"
+                description={`No attendance records for ${format(currentMonth, 'MMMM yyyy')}.`}
+                icon={<Calendar className="h-12 w-12 text-muted-foreground" />}
+              />
+            )}
+          </CardContent>
+        </Card>
       </main>
       <Footer />
     </div>
