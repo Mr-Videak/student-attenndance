@@ -1,172 +1,57 @@
 
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { toast } from "sonner";
+import React from 'react';
+import { Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Calendar as CalendarIcon, Check, Save, X } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { 
-  AttendanceRecord, 
-  Class, 
-  createAttendanceRecord, 
-  formatDate, 
-  getAttendanceRecord, 
-  getCurrentDate, 
-  saveAttendanceRecord 
-} from '@/utils';
-import { format } from 'date-fns';
-import AttendanceList from './AttendanceList';
+import { Student } from '@/utils/data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-interface AttendanceMarkerProps {
-  classData: Class;
+export interface AttendanceMarkerProps {
+  rollNumber: string;
+  name: string;
+  avatar?: string;
+  isPresent: boolean;
+  onChange: (rollNumber: string, isPresent: boolean) => void;
 }
 
-const AttendanceMarker = ({ classData }: AttendanceMarkerProps) => {
-  const [searchParams] = useSearchParams();
-  const dateParam = searchParams.get('date');
-  
-  const [date, setDate] = useState<Date>(dateParam ? new Date(dateParam) : new Date());
-  const [formattedDate, setFormattedDate] = useState<string>(dateParam || getCurrentDate());
-  const [presentStudents, setPresentStudents] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  // Load attendance data when date changes
-  useEffect(() => {
-    const newFormattedDate = formatDate(date);
-    setFormattedDate(newFormattedDate);
-    
-    // Load existing attendance record for this date if it exists
-    const record = getAttendanceRecord(classData.id, newFormattedDate);
-    if (record) {
-      setPresentStudents(record.presentStudents);
-    } else {
-      // Default to all students being present
-      setPresentStudents(classData.students.map(student => student.rollNumber));
-    }
-  }, [date, classData]);
-  
-  // Toggle attendance for a student
-  const toggleAttendance = (rollNumber: string) => {
-    setPresentStudents(prev => {
-      if (prev.includes(rollNumber)) {
-        return prev.filter(rn => rn !== rollNumber);
-      } else {
-        return [...prev, rollNumber];
-      }
-    });
-  };
-  
-  // Set all students present
-  const markAllPresent = () => {
-    setPresentStudents(classData.students.map(student => student.rollNumber));
-    toast.success("All students marked present");
-  };
-  
-  // Set all students absent
-  const markAllAbsent = () => {
-    setPresentStudents([]);
-    toast.success("All students marked absent");
-  };
-  
-  // Save attendance
-  const saveAttendance = async () => {
-    setIsLoading(true);
-    
-    try {
-      const record: AttendanceRecord = createAttendanceRecord(
-        classData.id,
-        formattedDate,
-        presentStudents
-      );
-      
-      saveAttendanceRecord(record);
-      toast.success("Attendance saved successfully");
-    } catch (error) {
-      console.error("Error saving attendance:", error);
-      toast.error("Failed to save attendance");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const AttendanceMarker = ({ rollNumber, name, avatar, isPresent, onChange }: AttendanceMarkerProps) => {
+  // Generate initials for avatar fallback
+  const initials = name.split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2);
   
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full md:w-auto justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(date, "PPP")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={(date) => date && setDate(date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+    <div className="bg-card border rounded-md p-4 flex items-center justify-between transition-all hover:shadow-md">
+      <div className="flex items-center space-x-3">
+        <Avatar>
+          <AvatarImage src={avatar} alt={name} />
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="font-medium">{name}</p>
+          <p className="text-sm text-muted-foreground">{rollNumber}</p>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={markAllPresent}
-            className="flex items-center"
-          >
+      </div>
+      
+      <Button
+        variant={isPresent ? "default" : "outline"}
+        size="sm"
+        className={`min-w-[90px] ${isPresent ? 'bg-success hover:bg-success/90' : ''}`}
+        onClick={() => onChange(rollNumber, !isPresent)}
+      >
+        {isPresent ? (
+          <>
             <Check className="mr-1 h-4 w-4" />
-            Mark All Present
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={markAllAbsent}
-            className="flex items-center"
-          >
+            Present
+          </>
+        ) : (
+          <>
             <X className="mr-1 h-4 w-4" />
-            Mark All Absent
-          </Button>
-          <Button 
-            onClick={saveAttendance} 
-            disabled={isLoading}
-            className="flex items-center"
-          >
-            <Save className="mr-1 h-4 w-4" />
-            Save
-          </Button>
-        </div>
-      </div>
-      
-      {/* Student List for Attendance */}
-      <div className="bg-card rounded-lg border shadow-sm">
-        <AttendanceList 
-          students={classData.students}
-          presentStudents={presentStudents}
-          toggleAttendance={toggleAttendance}
-        />
-      </div>
-      
-      {/* Information about attendance */}
-      <div className="bg-muted p-4 rounded-lg text-sm">
-        <p className="flex items-center">
-          <span className="font-medium">Present: </span>
-          <span className="ml-2">{presentStudents.length} / {classData.students.length}</span>
-          <span className="ml-4 font-medium">Absent: </span>
-          <span className="ml-2">{classData.students.length - presentStudents.length}</span>
-        </p>
-      </div>
+            Absent
+          </>
+        )}
+      </Button>
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -47,7 +46,6 @@ const TakeAttendance = () => {
       try {
         setLoading(true);
         
-        // Fetch class data
         const { data: classData, error: classError } = await supabase
           .from('classes')
           .select('*')
@@ -57,7 +55,6 @@ const TakeAttendance = () => {
         if (classError) throw classError;
         setClassData(classData);
         
-        // Fetch students
         const { data: studentsData, error: studentsError } = await supabase
           .from('students')
           .select('*')
@@ -67,7 +64,6 @@ const TakeAttendance = () => {
         if (studentsError) throw studentsError;
         setStudents(studentsData || []);
         
-        // Check if attendance already exists for this date
         const formattedDate = date.split('/').reverse().join('-');
         const { data: existingRecord, error: recordError } = await supabase
           .from('attendance_records')
@@ -83,11 +79,9 @@ const TakeAttendance = () => {
             description: `Loaded attendance for ${date}. You can update it.`,
           });
         } else {
-          // Default all students as present
           setPresentStudents(studentsData.map(student => student.roll_number));
         }
         
-        // Format the date for display
         const [day, month, year] = date.split('/');
         const displayDate = new Date(`${year}-${month}-${day}`);
         setFormattedDate(format(displayDate, 'EEEE, MMMM d, yyyy'));
@@ -118,10 +112,8 @@ const TakeAttendance = () => {
   
   const handleToggleAll = (present) => {
     if (present) {
-      // Mark all as present
       setPresentStudents(students.map(student => student.roll_number));
     } else {
-      // Mark all as absent
       setPresentStudents([]);
     }
   };
@@ -145,11 +137,9 @@ const TakeAttendance = () => {
         return;
       }
       
-      // Convert date from DD/MM/YYYY to YYYY-MM-DD for database
       const [day, month, year] = date.split('/');
       const formattedDate = `${year}-${month}-${day}`;
       
-      // Check if a record already exists for this date
       const { data: existingRecord, error: checkError } = await supabase
         .from('attendance_records')
         .select('id')
@@ -161,7 +151,6 @@ const TakeAttendance = () => {
       let result;
       
       if (existingRecord && existingRecord.length > 0) {
-        // Update existing record
         result = await supabase
           .from('attendance_records')
           .update({
@@ -169,7 +158,6 @@ const TakeAttendance = () => {
           })
           .eq('id', existingRecord[0].id);
       } else {
-        // Create new record
         result = await supabase
           .from('attendance_records')
           .insert([{
@@ -200,7 +188,6 @@ const TakeAttendance = () => {
     }
   };
   
-  // Filter students based on search query
   const filteredStudents = students.filter(
     student =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -362,7 +349,7 @@ const TakeAttendance = () => {
           </div>
         </div>
         
-        <div className="attendance-grid mb-8">
+        <div className="grid grid-cols-1 gap-4 mb-8">
           {filteredStudents.length > 0 ? (
             filteredStudents.map(student => (
               <AttendanceMarker
