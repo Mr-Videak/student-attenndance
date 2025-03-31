@@ -68,6 +68,23 @@ const Classes = () => {
   
   const deleteClass = async (classId) => {
     try {
+      // First, delete all students associated with this class to avoid foreign key constraints
+      const { error: studentsError } = await supabase
+        .from('students')
+        .delete()
+        .eq('class_id', classId);
+      
+      if (studentsError) throw studentsError;
+      
+      // Next, delete all attendance records for this class
+      const { error: attendanceError } = await supabase
+        .from('attendance_records')
+        .delete()
+        .eq('class_id', classId);
+      
+      if (attendanceError) throw attendanceError;
+      
+      // Finally delete the class itself
       const { error } = await supabase
         .from('classes')
         .delete()

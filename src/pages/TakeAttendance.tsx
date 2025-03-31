@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import AttendanceMarker from '@/components/attendance/AttendanceMarker';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from '@/components/auth/AuthProvider';
-import { getCurrentDate } from '@/utils/attendance';
 import { 
   Dialog,
   DialogContent,
@@ -19,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import EmptyState from '@/components/ui/EmptyState';
 
@@ -33,7 +32,7 @@ const TakeAttendance = () => {
   const [students, setStudents] = useState([]);
   const [presentStudents, setPresentStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [date, setDate] = useState(getCurrentDate());
+  const [date, setDate] = useState(format(new Date(), 'dd/MM/yyyy'));
   const [formattedDate, setFormattedDate] = useState('');
   const [showCalendar, setShowCalendar] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -64,12 +63,14 @@ const TakeAttendance = () => {
         if (studentsError) throw studentsError;
         setStudents(studentsData || []);
         
-        const formattedDate = date.split('/').reverse().join('-');
+        const parsedDate = parse(date, 'dd/MM/yyyy', new Date());
+        const formattedQueryDate = format(parsedDate, 'yyyy-MM-dd');
+        
         const { data: existingRecord, error: recordError } = await supabase
           .from('attendance_records')
           .select('present_students')
           .eq('class_id', classId)
-          .eq('date', formattedDate)
+          .eq('date', formattedQueryDate)
           .single();
         
         if (existingRecord) {
@@ -82,9 +83,7 @@ const TakeAttendance = () => {
           setPresentStudents(studentsData.map(student => student.roll_number));
         }
         
-        const [day, month, year] = date.split('/');
-        const displayDate = new Date(`${year}-${month}-${day}`);
-        setFormattedDate(format(displayDate, 'EEEE, MMMM d, yyyy'));
+        setFormattedDate(format(parsedDate, 'EEEE, MMMM d, yyyy'));
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -137,8 +136,8 @@ const TakeAttendance = () => {
         return;
       }
       
-      const [day, month, year] = date.split('/');
-      const formattedDate = `${year}-${month}-${day}`;
+      const parsedDate = parse(date, 'dd/MM/yyyy', new Date());
+      const formattedDate = format(parsedDate, 'yyyy-MM-dd');
       
       const { data: existingRecord, error: checkError } = await supabase
         .from('attendance_records')
@@ -283,7 +282,7 @@ const TakeAttendance = () => {
                     </DialogHeader>
                     <CalendarComponent
                       mode="single"
-                      selected={new Date(formattedDate)}
+                      selected={parse(date, 'dd/MM/yyyy', new Date())}
                       onSelect={handleDateChange}
                       className="mx-auto"
                     />

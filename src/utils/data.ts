@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 
 export type Student = {
@@ -156,45 +157,19 @@ export const saveAttendanceRecords = (records: AttendanceRecord[]): void => {
 
 // Default class data with predefined roll number ranges
 export const generateDefaultClasses = (): Class[] => {
-  const defaultClasses: Class[] = [
-    {
-      id: 'class-1',
-      name: 'Computer Science',
-      section: 'A',
-      batch: '2023',
-      students: generateStudentsFromRollNumbers(
-        [
-          { start: '23BQ1A4755', end: '23BQ1A4799' },
-          { start: '23BQ1A47A0', end: '23BQ1A47A7' }
-        ],
-        'A',
-        '2023'
-      )
-    },
-    {
-      id: 'class-2',
-      name: 'Information Technology',
-      section: 'B',
-      batch: '2024',
-      students: generateStudentsFromRollNumbers(
-        [
-          { start: '24BQ5A4708', end: '24BQ5A4714' }
-        ],
-        'B',
-        '2024'
-      )
-    }
-  ];
-  
-  return defaultClasses;
+  // We're no longer creating any default classes to avoid deletion issues
+  return [];
 };
 
 // Initialize the app with default data if none exists
 export const initializeAppData = (): void => {
+  // Don't create default classes anymore as they caused deletion issues
   const existingClasses = loadClasses();
   
-  if (existingClasses.length === 0) {
+  // Only initialize with default classes if there are none and the user is not using Supabase
+  if (existingClasses.length === 0 && !localStorage.getItem('supabase.auth.token')) {
     const defaultClasses = generateDefaultClasses();
     saveClasses(defaultClasses);
   }
 };
+
