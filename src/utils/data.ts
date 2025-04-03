@@ -155,21 +155,21 @@ export const saveAttendanceRecords = (records: AttendanceRecord[]): void => {
   }
 };
 
-// Default class data with predefined roll number ranges
+// No default class data - users will create their own
 export const generateDefaultClasses = (): Class[] => {
-  // We're no longer creating any default classes to avoid deletion issues
   return [];
 };
 
-// Initialize the app with default data if none exists
+// Initialize the app with data but don't create default classes
 export const initializeAppData = (): void => {
-  // Don't create default classes anymore as they caused deletion issues
+  // Don't create default classes anymore
+  // Only use localStorage when not using Supabase
   const existingClasses = loadClasses();
   
-  // Only initialize with default classes if there are none and the user is not using Supabase
   if (existingClasses.length === 0 && !localStorage.getItem('supabase.auth.token')) {
+    // We don't automatically create classes anymore
+    // Users should create their own classes
     const defaultClasses = generateDefaultClasses();
     saveClasses(defaultClasses);
   }
 };
-

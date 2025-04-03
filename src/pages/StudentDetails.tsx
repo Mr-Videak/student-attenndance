@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -272,8 +271,19 @@ const StudentDetails = () => {
                   <AvatarImage src={student.avatar || '/placeholder.svg'} alt={student.name} />
                   <AvatarFallback>{getInitials(student.name)}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <CardTitle className="text-2xl">{student.name}</CardTitle>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-2xl">{student.name}</CardTitle>
+                    <span className={`px-2 py-1 text-sm rounded-full ${
+                      attendanceStats.percentage >= 75 
+                        ? 'bg-success/20 text-success' 
+                        : attendanceStats.percentage >= 50 
+                          ? 'bg-warning/20 text-warning' 
+                          : 'bg-destructive/20 text-destructive'
+                    }`}>
+                      {attendanceStats.percentage}%
+                    </span>
+                  </div>
                   <CardDescription className="text-lg font-medium">{student.roll_number}</CardDescription>
                 </div>
               </CardHeader>

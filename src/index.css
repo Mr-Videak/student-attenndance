@@ -82,6 +82,46 @@
   to { opacity: 1; }
 }
 
+/* Pulsating animation for highlights */
+.animate-pulse-light {
+  animation: pulseLight 2s infinite;
+}
+
+@keyframes pulseLight {
+  0% { background-opacity: 0.1; }
+  50% { background-opacity: 0.2; }
+  100% { background-opacity: 0.1; }
+}
+
+/* Slide animations */
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Hover effects for cards */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-md;
+  transform: translateY(0);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+}
+
+/* Status indicators */
+.status-present {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-success/20 text-success;
+}
+
+.status-absent {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-destructive/20 text-destructive;
+}
+
 /* Custom classes for the attendance system */
 .attendance-grid {
   display: grid;
@@ -99,4 +139,43 @@
   .attendance-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* Gradient backgrounds */
+.bg-gradient-primary {
+  @apply bg-gradient-to-r from-purple-500 to-indigo-600;
+}
+
+.bg-gradient-success {
+  @apply bg-gradient-to-r from-green-400 to-emerald-500;
+}
+
+.bg-gradient-warning {
+  @apply bg-gradient-to-r from-amber-400 to-orange-500;
+}
+
+/* Enhanced button styles */
+.btn-gradient {
+  @apply relative overflow-hidden transition-all duration-300;
+}
+
+.btn-gradient::after {
+  content: '';
+  @apply absolute inset-0 bg-white opacity-0 transition-opacity duration-300;
+}
+
+.btn-gradient:hover::after {
+  @apply opacity-20;
+}
+
+/* Background patterns */
+.bg-pattern-dots {
+  background-image: radial-gradient(var(--muted) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.bg-pattern-grid {
+  background-image: linear-gradient(var(--muted) 1px, transparent 1px),
+                    linear-gradient(to right, var(--muted) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
