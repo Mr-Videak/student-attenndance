@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserCheck } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -63,9 +65,61 @@ const AuthPage = () => {
     }
   };
 
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    
+    // Demo credentials
+    const demoEmail = 'demo@example.com';
+    const demoPassword = 'demo123456';
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: demoPassword,
+      });
+
+      if (error) {
+        // If the demo account doesn't exist, create it
+        if (error.message.includes('Invalid login credentials')) {
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: demoEmail,
+            password: demoPassword,
+          });
+          
+          if (signUpError) {
+            toast.error('Failed to create demo account: ' + signUpError.message);
+          } else {
+            // Try to sign in with the newly created account
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+              email: demoEmail,
+              password: demoPassword,
+            });
+            
+            if (signInError) {
+              toast.error('Failed to sign in with demo account');
+            } else {
+              toast.success('Signed in with demo account!');
+              navigate('/');
+            }
+          }
+        } else {
+          toast.error('Error accessing demo account: ' + error.message);
+        }
+      } else {
+        toast.success('Signed in with demo account!');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error with demo login:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-muted/50 to-muted p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md animate-fade-in">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Attendance App</CardTitle>
           <CardDescription className="text-center">
@@ -102,7 +156,7 @@ const AuthPage = () => {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-2">
                 <Button className="w-full" disabled={loading}>
                   {loading ? (
                     <>
@@ -113,6 +167,38 @@ const AuthPage = () => {
                     'Sign In'
                   )}
                 </Button>
+                
+                <div className="relative w-full my-2">
+                  <Separator className="my-2" />
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-2 bg-card text-xs text-muted-foreground">
+                    OR
+                  </div>
+                </div>
+                
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  className="w-full" 
+                  onClick={handleDemoLogin}
+                  disabled={demoLoading}
+                >
+                  {demoLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Accessing Demo...
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Try with Demo Account
+                    </>
+                  )}
+                </Button>
+                <div className="text-center w-full mt-2">
+                  <p className="text-xs text-muted-foreground">
+                    No signup required. Access all features instantly!
+                  </p>
+                </div>
               </CardFooter>
             </form>
           </TabsContent>
@@ -141,7 +227,7 @@ const AuthPage = () => {
                   />
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-2">
                 <Button className="w-full" disabled={loading}>
                   {loading ? (
                     <>
@@ -152,6 +238,38 @@ const AuthPage = () => {
                     'Create Account'
                   )}
                 </Button>
+                
+                <div className="relative w-full my-2">
+                  <Separator className="my-2" />
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-2 bg-card text-xs text-muted-foreground">
+                    OR
+                  </div>
+                </div>
+                
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  className="w-full" 
+                  onClick={handleDemoLogin}
+                  disabled={demoLoading}
+                >
+                  {demoLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Accessing Demo...
+                    </>
+                  ) : (
+                    <>
+                      <UserCheck className="mr-2 h-4 w-4" />
+                      Try with Demo Account
+                    </>
+                  )}
+                </Button>
+                <div className="text-center w-full mt-2">
+                  <p className="text-xs text-muted-foreground">
+                    No signup required. Access all features instantly!
+                  </p>
+                </div>
               </CardFooter>
             </form>
           </TabsContent>
