@@ -68,8 +68,8 @@ const AuthPage = () => {
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     
-    // Demo credentials - using a real email format
-    const demoEmail = 'demo-user@attendance-app.com';
+    // Demo credentials - using a standard email format that will be accepted
+    const demoEmail = 'demo@example.org';
     const demoPassword = 'demo123456';
     
     try {
@@ -87,7 +87,6 @@ const AuthPage = () => {
           email: demoEmail,
           password: demoPassword,
           options: {
-            // Make the account automatically verified
             emailRedirectTo: window.location.origin
           }
         });
@@ -97,17 +96,23 @@ const AuthPage = () => {
           toast.error('Failed to create demo account: ' + signUpError.message);
         } else {
           // Try signing in again after creating the account
-          const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
-            email: demoEmail,
-            password: demoPassword,
-          });
+          toast.success('Demo account created! Signing in...');
           
-          if (newSignInError) {
-            toast.error('Created demo account, but couldn\'t sign in automatically. Please try again.');
-          } else {
-            toast.success('Signed in with demo account!');
-            navigate('/');
-          }
+          // Wait a moment before signing in to ensure the account is created
+          setTimeout(async () => {
+            const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
+              email: demoEmail,
+              password: demoPassword,
+            });
+            
+            if (newSignInError) {
+              toast.error('Created demo account, but couldn\'t sign in automatically. Please try again.');
+              setDemoLoading(false);
+            } else {
+              toast.success('Signed in with demo account!');
+              navigate('/');
+            }
+          }, 1000);
         }
       } else {
         // Successful login with existing demo account
@@ -117,7 +122,6 @@ const AuthPage = () => {
     } catch (error) {
       console.error('Error with demo login:', error);
       toast.error('An unexpected error occurred');
-    } finally {
       setDemoLoading(false);
     }
   };
@@ -201,7 +205,7 @@ const AuthPage = () => {
                 </Button>
                 <div className="text-center w-full mt-2">
                   <p className="text-xs text-muted-foreground">
-                    Demo credentials: demo-user@attendance-app.com / demo123456
+                    Demo credentials: demo@example.org / demo123456
                   </p>
                 </div>
               </CardFooter>
@@ -272,7 +276,7 @@ const AuthPage = () => {
                 </Button>
                 <div className="text-center w-full mt-2">
                   <p className="text-xs text-muted-foreground">
-                    Demo credentials: demo-user@attendance-app.com / demo123456
+                    Demo credentials: demo@example.org / demo123456
                   </p>
                 </div>
               </CardFooter>
