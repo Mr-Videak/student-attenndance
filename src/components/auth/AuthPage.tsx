@@ -68,44 +68,49 @@ const AuthPage = () => {
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     
-    // Demo credentials
-    const demoEmail = 'demo@example.com';
+    // Demo credentials - using a real email format
+    const demoEmail = 'demo-user@attendance-app.com';
     const demoPassword = 'demo123456';
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // First try to sign in with demo account
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: demoEmail,
         password: demoPassword,
       });
 
-      if (error) {
-        // If the demo account doesn't exist, create it
-        if (error.message.includes('Invalid login credentials')) {
-          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      if (signInError) {
+        console.log('Demo login failed, creating demo account...');
+        
+        // If login fails, try to create the demo account
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: demoEmail,
+          password: demoPassword,
+          options: {
+            // Make the account automatically verified
+            emailRedirectTo: window.location.origin
+          }
+        });
+        
+        if (signUpError) {
+          console.error('Error creating demo account:', signUpError);
+          toast.error('Failed to create demo account: ' + signUpError.message);
+        } else {
+          // Try signing in again after creating the account
+          const { data: newSignInData, error: newSignInError } = await supabase.auth.signInWithPassword({
             email: demoEmail,
             password: demoPassword,
           });
           
-          if (signUpError) {
-            toast.error('Failed to create demo account: ' + signUpError.message);
+          if (newSignInError) {
+            toast.error('Created demo account, but couldn\'t sign in automatically. Please try again.');
           } else {
-            // Try to sign in with the newly created account
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-              email: demoEmail,
-              password: demoPassword,
-            });
-            
-            if (signInError) {
-              toast.error('Failed to sign in with demo account');
-            } else {
-              toast.success('Signed in with demo account!');
-              navigate('/');
-            }
+            toast.success('Signed in with demo account!');
+            navigate('/');
           }
-        } else {
-          toast.error('Error accessing demo account: ' + error.message);
         }
       } else {
+        // Successful login with existing demo account
         toast.success('Signed in with demo account!');
         navigate('/');
       }
@@ -196,7 +201,7 @@ const AuthPage = () => {
                 </Button>
                 <div className="text-center w-full mt-2">
                   <p className="text-xs text-muted-foreground">
-                    No signup required. Access all features instantly!
+                    Demo credentials: demo-user@attendance-app.com / demo123456
                   </p>
                 </div>
               </CardFooter>
@@ -267,7 +272,7 @@ const AuthPage = () => {
                 </Button>
                 <div className="text-center w-full mt-2">
                   <p className="text-xs text-muted-foreground">
-                    No signup required. Access all features instantly!
+                    Demo credentials: demo-user@attendance-app.com / demo123456
                   </p>
                 </div>
               </CardFooter>
