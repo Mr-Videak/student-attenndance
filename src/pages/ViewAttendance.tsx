@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
@@ -84,13 +85,14 @@ const ViewAttendance = () => {
   const copyAttendanceToClipboard = () => {
     if (!attendanceRecord || !classData || !students.length) return;
     
-    const date = new Date(attendanceRecord.date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
+    // Format the date in the requested style
+    const dateObj = new Date(attendanceRecord.date);
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
     });
-    
-    let message = `${classData.name} | ${date}\n`;
-    message += `${classData.section}-${classData.batch}\n\n`;
     
     const presentStudents = students.filter(student => 
       attendanceRecord.present_students.includes(student.roll_number)
@@ -104,15 +106,20 @@ const ViewAttendance = () => {
     const totalCount = students.length;
     const percentage = Math.round((presentCount / totalCount) * 100);
     
-    message += `Present: ${presentCount}/${totalCount} (${percentage}%)\n\n`;
+    // Create the new minimalistic message
+    let message = `Attendance Report\n`;
+    message += `📆 ${formattedDate}\n`;
+    message += `📚 ${classData.name} - ${classData.section} | 🎓 Batch: ${classData.batch}\n\n`;
     
     if (absentStudents.length > 0) {
-      message += `Absent:\n`;
-      const absentRollNumbers = absentStudents.map(s => s.roll_number).join(", ");
+      message += `❌ Absentees (${absentStudents.length}/${totalCount})\n`;
+      const absentRollNumbers = absentStudents.map(s => s.roll_number).join('\n');
       message += absentRollNumbers;
     } else {
-      message += `All present!`;
+      message += `✅ All students present!`;
     }
+    
+    message += `\n\n📊 Attendance: ${percentage}%`;
     
     navigator.clipboard.writeText(message);
     
@@ -125,13 +132,14 @@ const ViewAttendance = () => {
   const shareAttendanceOnWhatsApp = () => {
     if (!attendanceRecord || !classData || !students.length) return;
     
-    const date = new Date(attendanceRecord.date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
+    // Format the date in the requested style
+    const dateObj = new Date(attendanceRecord.date);
+    const formattedDate = dateObj.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
     });
-    
-    let message = `${classData.name} | ${date}\n`;
-    message += `${classData.section}-${classData.batch}\n\n`;
     
     const presentStudents = students.filter(student => 
       attendanceRecord.present_students.includes(student.roll_number)
@@ -145,15 +153,20 @@ const ViewAttendance = () => {
     const totalCount = students.length;
     const percentage = Math.round((presentCount / totalCount) * 100);
     
-    message += `Present: ${presentCount}/${totalCount} (${percentage}%)\n\n`;
+    // Create the new minimalistic message
+    let message = `Attendance Report\n`;
+    message += `📆 ${formattedDate}\n`;
+    message += `📚 ${classData.name} - ${classData.section} | 🎓 Batch: ${classData.batch}\n\n`;
     
     if (absentStudents.length > 0) {
-      message += `Absent:\n`;
-      const absentRollNumbers = absentStudents.map(s => s.roll_number).join(", ");
+      message += `❌ Absentees (${absentStudents.length}/${totalCount})\n`;
+      const absentRollNumbers = absentStudents.map(s => s.roll_number).join('\n');
       message += absentRollNumbers;
     } else {
-      message += `All present!`;
+      message += `✅ All students present!`;
     }
+    
+    message += `\n\n📊 Attendance: ${percentage}%`;
     
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
