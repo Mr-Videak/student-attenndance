@@ -31,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { format, parseISO, startOfMonth, endOfMonth, subMonths, addMonths } from 'date-fns';
 import EmptyState from '@/components/ui/EmptyState';
+import { formatMinimalisticAttendanceReport } from '@/utils/attendance';
 
 const AttendanceRecords = () => {
   const { toast } = useToast();
@@ -137,39 +138,12 @@ const AttendanceRecords = () => {
       
       if (studentsError) throw studentsError;
       
-      const dateObj = new Date(recordData.date);
-      const formattedDate = dateObj.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      });
-      
-      const presentStudents = studentsData.filter(student => 
-        recordData.present_students.includes(student.roll_number)
+      const message = formatMinimalisticAttendanceReport(
+        classData, 
+        studentsData, 
+        recordData.present_students,
+        recordData.date
       );
-      
-      const absentStudents = studentsData.filter(student => 
-        !recordData.present_students.includes(student.roll_number)
-      );
-      
-      const presentCount = presentStudents.length;
-      const totalCount = studentsData.length;
-      const percentage = Math.round((presentCount / totalCount) * 100);
-      
-      let message = `Attendance Report\n`;
-      message += `📆 ${formattedDate}\n`;
-      message += `📚 ${classData.name} - ${classData.section} | 🎓 Batch: ${classData.batch}\n\n`;
-      
-      if (absentStudents.length > 0) {
-        message += `❌ Absentees (${absentStudents.length}/${totalCount})\n`;
-        const absentRollNumbers = absentStudents.map(s => s.roll_number).join('\n');
-        message += absentRollNumbers;
-      } else {
-        message += `✅ All students present!`;
-      }
-      
-      message += `\n\n📊 Attendance: ${percentage}%`;
       
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
