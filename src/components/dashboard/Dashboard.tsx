@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -11,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, ClipboardList, Clock, UserCheck, BarChart, Trophy } from 'lucide-react';
-import { Class, loadAttendanceRecords } from '@/utils/data';
+import { Class } from '@/utils/data';
 import { getCurrentDate } from '@/utils/attendance';
 import EmptyState from '../ui/EmptyState';
 import { supabase } from "@/integrations/supabase/client";

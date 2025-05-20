@@ -19,12 +19,8 @@ import {
   Clock, 
   XCircle 
 } from 'lucide-react';
-import { 
-  Class, 
-  Student, 
-  calculateStudentAttendanceStats, 
-  getStudentAttendanceRecords 
-} from '@/utils';
+import { Class, Student } from '@/utils';
+import { calculateStudentAttendanceStats, getStudentAttendanceRecords } from '@/utils/attendance';
 
 interface StudentProfileProps {
   student: Student;
