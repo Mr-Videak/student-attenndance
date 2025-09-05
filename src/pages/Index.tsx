@@ -5,12 +5,10 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useAuth } from '@/components/auth/AuthProvider';
 import ClassList from '@/components/classes/ClassList';
 import { loadClasses } from '@/utils/data';
 
 const Index = () => {
-  const { user, signOut } = useAuth();
   const classes = loadClasses();
   
   return (
@@ -32,9 +30,6 @@ const Index = () => {
                 Create Class
               </Button>
             </Link>
-            <Button variant="outline" onClick={signOut}>
-              Sign Out
-            </Button>
           </div>
         </div>
         

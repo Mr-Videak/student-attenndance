@@ -13,11 +13,9 @@ import { Calendar, ClipboardList, Clock, UserCheck, BarChart, Trophy } from 'luc
 import { Class } from '@/utils/data';
 import { getCurrentDate } from '@/utils/attendance';
 import EmptyState from '../ui/EmptyState';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from '@/components/auth/AuthProvider';
+import { loadClasses, loadAttendanceRecords } from '@/utils/data';
 
 const Dashboard = () => {
-  const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,38 +23,28 @@ const Dashboard = () => {
   
   // Load data
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = () => {
       setLoading(true);
-      if (!user) return;
       
       try {
-        // Fetch classes from Supabase
-        const { data: classesData, error: classesError } = await supabase
-          .from('classes')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (classesError) throw classesError;
+        // Load classes from localStorage
+        const classesData = loadClasses();
         setClasses(classesData || []);
         
-        // Fetch attendance records
-        const { data: recordsData, error: recordsError } = await supabase
-          .from('attendance_records')
-          .select('*')
-          .eq('date', currentDate);
-        
-        if (recordsError) throw recordsError;
-        setAttendanceRecords(recordsData || []);
+        // Load attendance records from localStorage
+        const recordsData = loadAttendanceRecords();
+        const todayRecords = recordsData.filter(record => record.date === currentDate);
+        setAttendanceRecords(todayRecords || []);
         
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Error loading dashboard data:', error);
       } finally {
         setLoading(false);
       }
     };
     
     fetchData();
-  }, [user, currentDate]);
+  }, [currentDate]);
   
   // Dashboard stats
   const totalClasses = classes.length;

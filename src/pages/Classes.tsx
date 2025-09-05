@@ -28,69 +28,46 @@ import {
 import SearchBar from '@/components/ui/SearchBar';
 import EmptyState from '@/components/ui/EmptyState';
 import { ClipboardList } from 'lucide-react';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from '@/components/auth/AuthProvider';
+import { loadClasses, saveClasses, loadAttendanceRecords, saveAttendanceRecords } from '@/utils/data';
 
 const Classes = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     fetchClasses();
-  }, [user]);
+  }, []);
   
-  const fetchClasses = async () => {
+  const fetchClasses = () => {
     try {
       setLoading(true);
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('classes')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
+      const data = loadClasses();
       setClasses(data || []);
     } catch (error) {
       console.error('Error fetching classes:', error);
       toast({
         variant: "destructive",
         title: "Error fetching classes",
-        description: error.message,
+        description: "Failed to load classes from storage",
       });
     } finally {
       setLoading(false);
     }
   };
   
-  const deleteClass = async (classId) => {
+  const deleteClass = (classId) => {
     try {
-      // First, delete all students associated with this class to avoid foreign key constraints
-      const { error: studentsError } = await supabase
-        .from('students')
-        .delete()
-        .eq('class_id', classId);
+      // Delete class from local storage
+      const existingClasses = loadClasses();
+      const updatedClasses = existingClasses.filter(c => c.id !== classId);
+      saveClasses(updatedClasses);
       
-      if (studentsError) throw studentsError;
-      
-      // Next, delete all attendance records for this class
-      const { error: attendanceError } = await supabase
-        .from('attendance_records')
-        .delete()
-        .eq('class_id', classId);
-      
-      if (attendanceError) throw attendanceError;
-      
-      // Finally delete the class itself
-      const { error } = await supabase
-        .from('classes')
-        .delete()
-        .eq('id', classId);
-      
-      if (error) throw error;
+      // Delete attendance records for this class
+      const existingRecords = loadAttendanceRecords();
+      const updatedRecords = existingRecords.filter(r => r.classId !== classId);
+      saveAttendanceRecords(updatedRecords);
       
       // Update local state
       setClasses(classes.filter(c => c.id !== classId));

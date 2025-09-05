@@ -5,8 +5,7 @@ import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from '@/components/auth/AuthProvider';
+import { loadClasses, saveClasses } from '@/utils/data';
 import { 
   Form, 
   FormControl, 
@@ -36,7 +35,6 @@ const EditClass = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   
   const form = useForm({
@@ -49,24 +47,17 @@ const EditClass = () => {
   });
   
   useEffect(() => {
-    if (!user) return;
-    
-    const fetchClassData = async () => {
+    const fetchClassData = () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('classes')
-          .select('*')
-          .eq('id', classId)
-          .single();
-          
-        if (error) throw error;
+        const classes = loadClasses();
+        const classData = classes.find(c => c.id === classId);
         
-        if (data) {
+        if (classData) {
           form.reset({
-            name: data.name,
-            section: data.section,
-            batch: data.batch,
+            name: classData.name,
+            section: classData.section,
+            batch: classData.batch,
           });
         }
       } catch (error) {
@@ -82,23 +73,17 @@ const EditClass = () => {
     };
     
     fetchClassData();
-  }, [user, classId, form]);
+  }, [classId, form]);
   
-  const onSubmit = async (values) => {
+  const onSubmit = (values) => {
     try {
-      if (!user) throw new Error("You must be logged in");
-      
-      const { error } = await supabase
-        .from('classes')
-        .update({
-          name: values.name,
-          section: values.section,
-          batch: values.batch,
-          // Don't update user_id, it should remain the same
-        })
-        .eq('id', classId);
-      
-      if (error) throw error;
+      const classes = loadClasses();
+      const updatedClasses = classes.map(c => 
+        c.id === classId 
+          ? { ...c, name: values.name, section: values.section, batch: values.batch }
+          : c
+      );
+      saveClasses(updatedClasses);
       
       toast({
         title: "Class updated",

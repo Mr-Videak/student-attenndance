@@ -1,13 +1,9 @@
 
 import { format } from 'date-fns';
+import { loadAttendanceRecords } from './data';
 
-// Define the AttendanceRecord type
-export interface AttendanceRecord {
-  id: string;
-  classId: string;
-  date: string;
-  presentStudents: string[];
-}
+// Import AttendanceRecord from data.ts to avoid duplication
+import type { AttendanceRecord } from './data';
 
 // Get current date in YYYY-MM-DD format
 export const getCurrentDate = (): string => {
@@ -19,9 +15,8 @@ export const getAttendanceRecord = (
   classId: string,
   date: string
 ): AttendanceRecord | undefined => {
-  // This is a placeholder for the actual implementation
-  // In a real app, this would fetch from Supabase
-  return undefined;
+  const records = loadAttendanceRecords();
+  return records.find((r) => r.classId === classId && r.date === date);
 };
 
 // Get attendance records for a specific student
@@ -29,9 +24,13 @@ export const getStudentAttendanceRecords = (
   rollNumber: string,
   classId: string
 ): {date: string; present: boolean}[] => {
-  // This is a placeholder implementation
-  // In a real app, this would fetch from Supabase
-  return [];
+  const records = loadAttendanceRecords();
+  return records
+    .filter(record => record.classId === classId)
+    .map(record => ({
+      date: record.date,
+      present: record.presentStudents.includes(rollNumber)
+    }));
 };
 
 // Calculate attendance statistics for a specific student

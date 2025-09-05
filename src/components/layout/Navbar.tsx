@@ -12,12 +12,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useAuth } from '@/components/auth/AuthProvider';
 import { useTheme } from '@/hooks/use-theme';
 
 const Navbar = () => {
   const isMobile = useIsMobile();
-  const { user, signOut } = useAuth();
   const location = useLocation();
   const { theme, setTheme } = useTheme();
 
@@ -81,16 +79,6 @@ const Navbar = () => {
                   {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
                 </button>
                 
-                {user && (
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center justify-start mt-4"
-                    onClick={() => signOut()}
-                  >
-                    <LogOut className="h-5 w-5 mr-2" />
-                    Sign Out
-                  </Button>
-                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -125,17 +113,6 @@ const Navbar = () => {
               )}
             </Button>
             
-            {user && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => signOut()}
-                className="flex items-center"
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                Sign Out
-              </Button>
-            )}
           </div>
         )}
       </div>

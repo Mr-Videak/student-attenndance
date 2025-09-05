@@ -16,9 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { generateStudentsFromRollNumbers, saveClasses } from '@/utils/data';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { generateStudentsFromRollNumbers, saveClasses, loadClasses, Class } from '@/utils/data';
 
 // Form validation schema
 const formSchema = z.object({
@@ -40,7 +38,6 @@ interface CreateClassFormProps {
 
 const CreateClassForm = ({ onSuccess }: CreateClassFormProps) => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Initialize form
@@ -75,62 +72,26 @@ const CreateClassForm = ({ onSuccess }: CreateClassFormProps) => {
     try {
       setIsSubmitting(true);
       
-      if (!user) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "You must be logged in to create a class",
-        });
-        return;
-      }
-      
       // Parse roll number ranges
       const rollNumberRanges = parseRollNumberRanges(values.rollNumberRanges || "");
       
-      // Create class in Supabase
-      const { data: classData, error: classError } = await supabase
-        .from('classes')
-        .insert([
-          {
-            name: values.name,
-            section: values.section,
-            batch: values.batch,
-            user_id: user.id,
-          }
-        ])
-        .select();
-      
-      if (classError) throw classError;
-      
-      const newClass = classData[0];
-      
       // Generate students from roll number ranges if provided
-      if (rollNumberRanges.length > 0) {
-        const students = generateStudentsFromRollNumbers(
-          rollNumberRanges,
-          values.section,
-          values.batch
-        );
-        
-        // Prepare students for Supabase insert
-        const supabaseStudents = students.map(student => ({
-          name: student.name,
-          roll_number: student.rollNumber,
-          section: student.section,
-          batch: student.batch,
-          class_id: newClass.id,
-          avatar: student.avatar,
-        }));
-        
-        // Insert students
-        if (supabaseStudents.length > 0) {
-          const { error: studentsError } = await supabase
-            .from('students')
-            .insert(supabaseStudents);
-          
-          if (studentsError) throw studentsError;
-        }
-      }
+      const students = rollNumberRanges.length > 0 ? 
+        generateStudentsFromRollNumbers(rollNumberRanges, values.section, values.batch) : [];
+      
+      // Create new class with local storage
+      const existingClasses = loadClasses();
+      const newClass: Class = {
+        id: `class-${Date.now()}`,
+        name: values.name,
+        section: values.section,
+        batch: values.batch,
+        students: students
+      };
+      
+      // Save to local storage
+      const updatedClasses = [...existingClasses, newClass];
+      saveClasses(updatedClasses);
       
       toast({
         title: "Class Created",

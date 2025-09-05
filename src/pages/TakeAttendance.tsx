@@ -7,8 +7,7 @@ import { ChevronLeft, Save, Calendar, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import AttendanceMarker from '@/components/attendance/AttendanceMarker';
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from '@/components/auth/AuthProvider';
+import { loadClasses, loadAttendanceRecords, saveAttendanceRecords, AttendanceRecord } from '@/utils/data';
 import { 
   Dialog,
   DialogContent,
@@ -26,7 +25,6 @@ const TakeAttendance = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
   
   const [classData, setClassData] = useState(null);
   const [students, setStudents] = useState([]);
@@ -39,51 +37,37 @@ const TakeAttendance = () => {
   const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
-    if (!user) return;
-    
-    const fetchClassAndStudents = async () => {
+    const fetchClassAndStudents = () => {
       try {
         setLoading(true);
         
-        const { data: classData, error: classError } = await supabase
-          .from('classes')
-          .select('*')
-          .eq('id', classId)
-          .single();
+        const classes = loadClasses();
+        const classData = classes.find(c => c.id === classId);
         
-        if (classError) throw classError;
-        setClassData(classData);
-        
-        const { data: studentsData, error: studentsError } = await supabase
-          .from('students')
-          .select('*')
-          .eq('class_id', classId)
-          .order('roll_number', { ascending: true });
-        
-        if (studentsError) throw studentsError;
-        setStudents(studentsData || []);
-        
-        const parsedDate = parse(date, 'dd/MM/yyyy', new Date());
-        const formattedQueryDate = format(parsedDate, 'yyyy-MM-dd');
-        
-        const { data: existingRecord, error: recordError } = await supabase
-          .from('attendance_records')
-          .select('present_students')
-          .eq('class_id', classId)
-          .eq('date', formattedQueryDate)
-          .single();
-        
-        if (existingRecord) {
-          setPresentStudents(existingRecord.present_students || []);
-          toast({
-            title: "Existing Record Found",
-            description: `Loaded attendance for ${date}. You can update it.`,
-          });
-        } else {
-          setPresentStudents(studentsData.map(student => student.roll_number));
+        if (classData) {
+          setClassData(classData);
+          setStudents(classData.students || []);
+          
+          const parsedDate = parse(date, 'dd/MM/yyyy', new Date());
+          const formattedQueryDate = format(parsedDate, 'yyyy-MM-dd');
+          
+          const attendanceRecords = loadAttendanceRecords();
+          const existingRecord = attendanceRecords.find(r => 
+            r.classId === classId && r.date === formattedQueryDate
+          );
+          
+          if (existingRecord) {
+            setPresentStudents(existingRecord.presentStudents || []);
+            toast({
+              title: "Existing Record Found",
+              description: `Loaded attendance for ${date}. You can update it.`,
+            });
+          } else {
+            setPresentStudents(classData.students.map(student => student.rollNumber));
+          }
+          
+          setFormattedDate(format(parsedDate, 'EEEE, MMMM d, yyyy'));
         }
-        
-        setFormattedDate(format(parsedDate, 'EEEE, MMMM d, yyyy'));
       } catch (error) {
         console.error('Error fetching data:', error);
         toast({
@@ -97,7 +81,7 @@ const TakeAttendance = () => {
     };
     
     fetchClassAndStudents();
-  }, [classId, date, user]);
+  }, [classId, date]);
   
   const handleAttendanceChange = (rollNumber, isPresent) => {
     setPresentStudents(prev => {
@@ -123,15 +107,15 @@ const TakeAttendance = () => {
     setShowCalendar(false);
   };
   
-  const handleSaveAttendance = async () => {
+  const handleSaveAttendance = () => {
     try {
       setSubmitting(true);
       
-      if (!classId || !user) {
+      if (!classId) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Missing class or user information.",
+          description: "Missing class information.",
         });
         return;
       }
@@ -139,35 +123,29 @@ const TakeAttendance = () => {
       const parsedDate = parse(date, 'dd/MM/yyyy', new Date());
       const formattedDate = format(parsedDate, 'yyyy-MM-dd');
       
-      const { data: existingRecord, error: checkError } = await supabase
-        .from('attendance_records')
-        .select('id')
-        .eq('class_id', classId)
-        .eq('date', formattedDate);
+      const existingRecords = loadAttendanceRecords();
+      const recordIndex = existingRecords.findIndex(r => 
+        r.classId === classId && r.date === formattedDate
+      );
       
-      if (checkError) throw checkError;
+      const newRecord: AttendanceRecord = {
+        id: recordIndex >= 0 ? existingRecords[recordIndex].id : `record-${Date.now()}`,
+        classId,
+        date: formattedDate,
+        presentStudents
+      };
       
-      let result;
-      
-      if (existingRecord && existingRecord.length > 0) {
-        result = await supabase
-          .from('attendance_records')
-          .update({
-            present_students: presentStudents,
-          })
-          .eq('id', existingRecord[0].id);
+      let updatedRecords;
+      if (recordIndex >= 0) {
+        // Update existing record
+        updatedRecords = [...existingRecords];
+        updatedRecords[recordIndex] = newRecord;
       } else {
-        result = await supabase
-          .from('attendance_records')
-          .insert([{
-            class_id: classId,
-            date: formattedDate,
-            present_students: presentStudents,
-            user_id: user.id,
-          }]);
+        // Create new record
+        updatedRecords = [...existingRecords, newRecord];
       }
       
-      if (result.error) throw result.error;
+      saveAttendanceRecords(updatedRecords);
       
       toast({
         title: "Attendance Saved",
