@@ -12,6 +12,9 @@ import TakeAttendance from "./pages/TakeAttendance";
 import CreateClass from "./pages/CreateClass";
 import AttendanceRecords from "./pages/AttendanceRecords";
 import NotFound from "./pages/NotFound";
+import AuthPage from "./components/auth/AuthPage";
+import { AuthProvider } from "./components/auth/AuthProvider";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { ThemeProvider } from "./hooks/use-theme";
 import Classes from "./pages/Classes";
 import EditClass from "./pages/EditClass";
@@ -28,20 +31,69 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/classes" element={<Classes />} />
-            <Route path="/class/:classId" element={<ClassDetails />} />
-            <Route path="/edit-class/:classId" element={<EditClass />} />
-            <Route path="/student/:rollNumber" element={<StudentDetails />} />
-            <Route path="/attendance/:classId" element={<TakeAttendance />} />
-            <Route path="/view-attendance/:recordId" element={<ViewAttendance />} />
-            <Route path="/attendance-records" element={<AttendanceRecords />} />
-            <Route path="/create-class" element={<CreateClass />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-          <Sonner />
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/classes" element={
+                <ProtectedRoute>
+                  <Classes />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/class/:classId" element={
+                <ProtectedRoute>
+                  <ClassDetails />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/edit-class/:classId" element={
+                <ProtectedRoute>
+                  <EditClass />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/student/:rollNumber" element={
+                <ProtectedRoute>
+                  <StudentDetails />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/attendance/:classId" element={
+                <ProtectedRoute>
+                  <TakeAttendance />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/view-attendance/:recordId" element={
+                <ProtectedRoute>
+                  <ViewAttendance />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/attendance-records" element={
+                <ProtectedRoute>
+                  <AttendanceRecords />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/create-class" element={
+                <ProtectedRoute>
+                  <CreateClass />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+            <Sonner />
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
